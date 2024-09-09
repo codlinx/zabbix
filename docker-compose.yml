@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  postgresdb:
+    image: postgres
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      - POSTGRES_DB=$DB_NAME
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=$DB_PASS
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  zabbix-server:
+    container_name: zabbix-server
+    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest
+    links:
+      - postgresdb
+    restart: always
+    ports:
+      - "10051:10051"
+    volumes:
+      - "./zabbix/alertscripts:/usr/lib/zabbix/alertscripts"
+    environment:
+      - DB_SERVER_HOST=postgresdb
+      - POSTGRES_DB=$DB_NAME
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=$DB_PASS
+    depends_on:
+      - postgresdb
+
+  zabbix-frontend:
+    container_name: zabbix-frontend
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest
+    links:
+      - postgresdb
+    restart: always
+    ports:
+      - "6500:8080"
+    environment:
+      - DB_SERVER_HOST=postgresdb
+      - POSTGRES_DB=zabbix
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=$DB_PASS
+      - PHP_TZ=America/Sao_Paulo
+    depends_on:
+      - postgresdb
+
+  zabbix-agent:
+    container_name: zabbix-agent
+    image: zabbix/zabbix-agent2:alpine-6.0-latest
+    user: root
+    links:
+      - zabbix-server
+    restart: always
+    privileged: true
+    volumes:
+      - /var/run:/var/run
+    ports:
+      - "10050:10050"
+    environment:
+      - ZBX_HOSTNAME=Zabbix server
+      - ZBX_SERVER_HOST=zabbix-server
