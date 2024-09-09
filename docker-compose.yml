@@ -63,3 +63,6 @@ services:
     environment:
       - ZBX_HOSTNAME=Zabbix server
       - ZBX_SERVER_HOST=zabbix-server
+
+volumes:
+  db:
