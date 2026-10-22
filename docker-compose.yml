@@ -52,6 +52,8 @@ services:
   zabbix-frontend:
     container_name: zabbix-frontend
     image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest
+    # CVE-2026-109618 / CVE-2026-109619 (PHP): sempre baixar a imagem mais recente, com o PHP corrigido
+    pull_policy: always
     links:
       - postgresdb
     restart: unless-stopped
